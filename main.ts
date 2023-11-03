@@ -50,12 +50,12 @@ interface Options {
     model: string
     temperature: string
 
-    reviseEnabled: boolean
-    revisePrimaryLanguage: string
-    reviseSecondaryLanguage: string
-    polishEnabled: boolean
-    polishPrimaryLanguage: string
-    polishSecondaryLanguage: string
+    writingEnabled: boolean
+    writingPrimaryLanguage: string
+    writingSecondaryLanguage: string
+    dialogueEnabled: boolean
+    dialoguePrimaryLanguage: string
+    dialogueSecondaryLanguage: string
     translateEnabled: boolean
     translatePrimaryLanguage: string
     translateSecondaryLanguage: string
@@ -98,7 +98,7 @@ interface APIResponse {
     }
 }
 
-type AllowedOneTimeActions = "revise" | "polish" | "translate" | "summarize"
+type AllowedOneTimeActions = "writing" | "dialogue" | "translate" | "summarize" | "writing" | "dialogue"
 type AllowedActions = "chat" | AllowedOneTimeActions
 
 abstract class ChatGPTAction {
@@ -214,10 +214,10 @@ class ChatAction extends ChatGPTAction {
 class OneTimeAction extends ChatGPTAction {
     private getPrompt(action: AllowedOneTimeActions, language: string): string {
         switch (action) {
-            case "revise":
-                return `Please revise the text to improve its clarity, brevity, and coherence. Document the changes made and provide a concise explanation for each modification (IMPORTANT: reply with ${language} language).`
-            case "polish":
-                return `Please correct the grammar and polish the text while adhering as closely as possible to the original intention (IMPORTANT: reply with ${language} language).`
+            case "writing":
+                return `You are an IT professional tasked with converting the following text into formal, consise, technical language suitable for an official document or presentation. Please ensure that the final text is professional, clear, and consise, while maintaining all the original technical information. The original conversation is as follows:.`
+            case "dialogue":
+                return `You are an expert working in the IT industry, and your working language is English. Your task is to rewrite the following text into a casual, concise expression that your colleagues can understand in everyday conversation. Remember, your goal is to retain all the technical information from the original text, while making it sound more nature and concise. The original technical description is as follows:`
             case "translate":
                 return `Please translate the text into ${language} and only provide me with the translated content without formating.`
             case "summarize":
@@ -239,7 +239,7 @@ class OneTimeAction extends ChatGPTAction {
         return {
             model: options.model,
             messages: [
-                // { role: "system", content: "You are a professional multilingual assistant who will help me revise, polish, or translate texts. Please strictly follow user instructions." },
+                // { role: "system", content: "You are a professional multilingual assistant who will help me writing, dialogue, or translate texts. Please strictly follow user instructions." },
                 {
                     role: "user", content: `${prompt}
 The input text being used for this task is enclosed within triple quotation marks below the next line:
@@ -315,6 +315,8 @@ async function doAction(popclip: PopClip, input: Input, options: Options, action
                 toBePasted = `${input.text}\n\n${result}\n`
             }
             popclip.pasteText(toBePasted, { restore: true })
+            popclip.copyText(toBePasted)
+            popclip.showText(toBePasted, { preview: true })
             popclip.showSuccess()
         } else {
             popclip.copyText(result)
@@ -329,8 +331,8 @@ async function doAction(popclip: PopClip, input: Input, options: Options, action
 }
 
 chatGPTActions.set("chat", new ChatAction())
-chatGPTActions.set("revise", new OneTimeAction())
-chatGPTActions.set("polish", new OneTimeAction())
+chatGPTActions.set("writing", new OneTimeAction())
+chatGPTActions.set("dialogue", new OneTimeAction())
 chatGPTActions.set("translate", new OneTimeAction())
 chatGPTActions.set("summarize", new OneTimeAction())
 
@@ -342,16 +344,16 @@ export const actions = [
         code: async (input: Input, options: Options, context: Context) => doAction(popclip, input, options, "chat"),
     },
     {
-        title: "ChatGPTx: revise text (click while holding shift(⇧) to use the secondary language)",
+        title: "ChatGPTx: writing",
         icon: "symbol:r.square.fill", // icon: "iconify:uil:edit",
-        requirements: ["text", "option-reviseEnabled=1"],
-        code: async (input: Input, options: Options, context: Context) => doAction(popclip, input, options, "revise"),
+        requirements: ["text", "option-writingEnabled=1"],
+        code: async (input: Input, options: Options, context: Context) => doAction(popclip, input, options, "writing"),
     },
     {
-        title: "ChatGPTx: polish text (click while holding shift(⇧) to use the secondary language)",
+        title: "ChatGPTx: dialogue",
         icon: "symbol:p.square.fill", // icon: "iconify:lucide:stars",
-        requirements: ["text", "option-polishEnabled=1"],
-        code: async (input: Input, options: Options, context: Context) => doAction(popclip, input, options, "polish"),
+        requirements: ["text", "option-dialogueEnabled=1"],
+        code: async (input: Input, options: Options, context: Context) => doAction(popclip, input, options, "dialogue"),
     },
     {
         title: "ChatGPTx: translate text (click while holding shift(⇧) to use the secondary language)",
@@ -444,8 +446,8 @@ const chatGPTActionsOptions: Array<any> = [
 ]
 
 new Array(
-    { name: "revise", primary: "English", secondary: "Chinese Simplified" },
-    { name: "polish", primary: "English", secondary: "Chinese Simplified" },
+    { name: "writing", primary: "English", secondary: "Chinese Simplified" },
+    { name: "dialogue", primary: "English", secondary: "Chinese Simplified" },
     { name: "translate", primary: "Chinese Simplified", secondary: "English" },
     { name: "summarize", primary: "Chinese Simplified", secondary: "English" },
 ).forEach((value) => {
