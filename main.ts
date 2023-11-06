@@ -1,8 +1,9 @@
 import axios from "axios";
 
+
 // Ref: https://pilotmoon.github.io/PopClip-Extensions/interfaces/PopClip.html
 // Source: https://github.com/pilotmoon/PopClip-Extensions/blob/master/popclip.d.ts
-
+/// <reference path="/Applications/PopClip.app/Contents/Resources/popclip.d.ts" />
 interface PasteboardContent {
     'public.utf8-plain-text'?: string
     'public.html'?: string
@@ -59,9 +60,9 @@ interface Options {
     translateEnabled: boolean
     translatePrimaryLanguage: string
     translateSecondaryLanguage: string
-    summarizeEnabled: boolean
-    summarizePrimaryLanguage: string
-    summarizeSecondaryLanguage: string
+    spellEnabled: boolean
+    spellPrimaryLanguage: string
+    spellSecondaryLanguage: string
 
     // prompts: string
 }
@@ -98,7 +99,7 @@ interface APIResponse {
     }
 }
 
-type AllowedOneTimeActions = "writing" | "dialogue" | "translate" | "summarize" | "writing" | "dialogue"
+type AllowedOneTimeActions = "writing" | "dialogue" | "translate" | "spell"
 type AllowedActions = "chat" | AllowedOneTimeActions
 
 abstract class ChatGPTAction {
@@ -215,13 +216,13 @@ class OneTimeAction extends ChatGPTAction {
     private getPrompt(action: AllowedOneTimeActions, language: string): string {
         switch (action) {
             case "writing":
-                return `You are an IT professional tasked with converting the following text into formal, consise, technical language suitable for an official document or presentation. Please ensure that the final text is professional, clear, and consise, while maintaining all the original technical information. The original conversation is as follows:.`
+                return `You are an IT professional tasked with converting the following text into straightforward, consise, technical tone suitable for an official English document. Please ensure that the final text is clear and consise, while maintaining all the original technical information. The original conversation is as follows:`
             case "dialogue":
-                return `You are an expert working in the IT industry, and your working language is English. Your task is to rewrite the following text into a casual, concise expression that your colleagues can understand in everyday conversation. Remember, your goal is to retain all the technical information from the original text, while making it sound more nature and concise. The original technical description is as follows:`
+                return `You are an American expert working in Google. Your task is to rephrase the following text into a clear and concise English expression that your colleagues can understand in daily conversation. Remember, your goal is to retain all the technical information from the original text, while making it sound more nature and concise. The original text is as follows:`
             case "translate":
-                return `Please translate the text into ${language} and only provide me with the translated content without formating.`
-            case "summarize":
-                return `Please provide a concise summary of the text, ensuring that all significant points are included (IMPORTANT: reply with ${language} language).`
+                return `Act as a English proofreader and review the following text. Feel free to rephrase sentences or make changes to enhance clarity but maintain the overall tone and style of the original. The original text is as follows:`
+            case "spell":
+                return `Please correct the spelling and grammar of the following text, and list the corrections to improve my English, the test is as follows:`
         }
     }
 
@@ -239,12 +240,9 @@ class OneTimeAction extends ChatGPTAction {
         return {
             model: options.model,
             messages: [
-                // { role: "system", content: "You are a professional multilingual assistant who will help me writing, dialogue, or translate texts. Please strictly follow user instructions." },
+                { role: "system", content: "You are a professional multilingual assistant who will help me writing, dialogue, or translate texts. Please strictly follow user instructions." },
                 {
-                    role: "user", content: `${prompt}
-The input text being used for this task is enclosed within triple quotation marks below the next line:
-
-"""${input.text}"""`,
+                    role: "user", content: `${prompt} ${input.text}`,
                 },
             ],
             temperature: Number(options.temperature),
@@ -275,7 +273,7 @@ function makeClientOptions(options: Options): object {
 }
 
 function isTerminalApplication(appName: string): boolean {
-    return appName === "iTerm2" || appName === "Terminal"
+    return appName === "iTerm2" || appName === "Terminal" || appName === "Notion"
 }
 
 const chatGPTActions: Map<AllowedActions, ChatAction | OneTimeAction> = new Map();
@@ -307,21 +305,27 @@ async function doAction(popclip: PopClip, input: Input, options: Options, action
             "chat/completions", requestData
         )
         const result = actionImpl.processResponse(popclip, resp)
+        
+        let toBePasted = `\n${result}\n`
+        // popclip.pasteText(toBePasted, { restore: true })
+        popclip.copyText(toBePasted)
+        popclip.showText(toBePasted, { preview: false })
+        // popclip.showSuccess()
 
-        if (popclip.context.canPaste) {
-            let toBePasted = `\n\n${result}\n`
-            if (!isTerminalApplication(popclip.context.appName) && popclip.context.canCopy) {
-                // Prevent the original selected text from being replaced.
-                toBePasted = `${input.text}\n\n${result}\n`
-            }
-            popclip.pasteText(toBePasted, { restore: true })
-            popclip.copyText(toBePasted)
-            popclip.showText(toBePasted, { preview: true })
-            popclip.showSuccess()
-        } else {
-            popclip.copyText(result)
-            popclip.showText(result, { preview: true })
-        }
+        // if (popclip.context.canPaste) {
+        //     let toBePasted = `\n\n${result}\n`
+        //     if (!isTerminalApplication(popclip.context.appName) && popclip.context.canCopy) {
+        //         // Prevent the original selected text from being replaced.
+        //         toBePasted = `${input.text}\n\n${result}\n`
+        //     }
+        //     popclip.pasteText(toBePasted, { restore: true })
+        //     popclip.copyText(toBePasted)
+        //     popclip.showText(toBePasted, { preview: true })
+        //     popclip.showSuccess()
+        // } else {
+        //     popclip.copyText(result)
+        //     popclip.showText(result, { preview: true })
+        // }
     } catch (e) {
         actionImpl.onRequestError(popclip, e)
 
@@ -334,7 +338,7 @@ chatGPTActions.set("chat", new ChatAction())
 chatGPTActions.set("writing", new OneTimeAction())
 chatGPTActions.set("dialogue", new OneTimeAction())
 chatGPTActions.set("translate", new OneTimeAction())
-chatGPTActions.set("summarize", new OneTimeAction())
+chatGPTActions.set("spell", new OneTimeAction())
 
 export const actions = [
     {
@@ -345,27 +349,27 @@ export const actions = [
     },
     {
         title: "ChatGPTx: writing",
-        icon: "symbol:r.square.fill", // icon: "iconify:uil:edit",
+        icon: "symbol:w.square.fill", // icon: "iconify:uil:edit",
         requirements: ["text", "option-writingEnabled=1"],
         code: async (input: Input, options: Options, context: Context) => doAction(popclip, input, options, "writing"),
     },
     {
         title: "ChatGPTx: dialogue",
-        icon: "symbol:p.square.fill", // icon: "iconify:lucide:stars",
+        icon: "symbol:d.square.fill", // icon: "iconify:lucide:stars",
         requirements: ["text", "option-dialogueEnabled=1"],
         code: async (input: Input, options: Options, context: Context) => doAction(popclip, input, options, "dialogue"),
     },
     {
-        title: "ChatGPTx: translate text (click while holding shift(⇧) to use the secondary language)",
+        title: "ChatGPTx: translate text",
         icon: "symbol:t.square.fill", // icon: "iconify:system-uicons:translate",
         requirements: ["text", "option-translateEnabled=1"],
         code: async (input: Input, options: Options, context: Context) => doAction(popclip, input, options, "translate"),
     },
     {
-        title: "ChatGPTx: summarize text (click while holding shift(⇧) to use the secondary language)",
+        title: "ChatGPTx: spell text ",
         icon: "symbol:s.square.fill", // icon: "iconify:system-uicons:translate",
-        requirements: ["text", "option-summarizeEnabled=1"],
-        code: async (input: Input, options: Options, context: Context) => doAction(popclip, input, options, "summarize"),
+        requirements: ["text", "option-spellEnabled=1"],
+        code: async (input: Input, options: Options, context: Context) => doAction(popclip, input, options, "spell"),
     },
 ]
 
@@ -411,12 +415,13 @@ const chatGPTActionsOptions: Array<any> = [
         "label": "API Base URL",
         "description": "For Azure: https://{resource-name}.openai.azure.com/openai/deployments/{deployment-id}",
         "type": "string",
-        "default value": "https://api.openai.com/v1"
+        "default value": "https://oa.api2d.site/v1"
     },
     {
         "identifier": "apiKey",
         "label": "API Key",
         "type": "string",
+        "default value": "fk217875-ktuKeXTGr3koZ6XxZVKz3src0OrsWGXN"
     },
     {
         "identifier": "model",
@@ -449,7 +454,7 @@ new Array(
     { name: "writing", primary: "English", secondary: "Chinese Simplified" },
     { name: "dialogue", primary: "English", secondary: "Chinese Simplified" },
     { name: "translate", primary: "Chinese Simplified", secondary: "English" },
-    { name: "summarize", primary: "Chinese Simplified", secondary: "English" },
+    { name: "spell", primary: "Chinese Simplified", secondary: "English" },
 ).forEach((value) => {
     const capitalizedName = value.name.charAt(0).toUpperCase() + value.name.slice(1)
     chatGPTActionsOptions.push(
