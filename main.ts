@@ -216,13 +216,13 @@ class OneTimeAction extends ChatGPTAction {
     private getPrompt(action: AllowedOneTimeActions, language: string): string {
         switch (action) {
             case "writing":
-                return `You are an IT professional tasked with converting the following text into straightforward, consise, technical tone suitable for an official English document. Please ensure that the final text is clear and consise, while maintaining all the original technical information. The original conversation is as follows:`
+                return `Act as a English proofreader and review the following text. Feel free to rephrase sentences or make changes to make it straightforward, consise, technical tone suitable for an official English document. Please ensure that the final text is clear and consise with markdown format. The original text is as follows:`
             case "dialogue":
-                return `You are an American expert working in Google. Your task is to rephrase the following text into a clear and concise English expression that your colleagues can understand in daily conversation. Remember, your goal is to retain all the technical information from the original text, while making it sound more nature and concise. The original text is as follows:`
+                return `You are an expert working in Google. Your task is to rephrase the following text into a clear and concise English expression that your colleagues can understand in daily conversation, while making it sound more nature and concise. The original text is as follows:`
             case "translate":
                 return `Act as a English proofreader and review the following text. Feel free to rephrase sentences or make changes to enhance clarity but maintain the overall tone and style of the original. The original text is as follows:`
             case "spell":
-                return `Please correct the spelling and grammar of the following text, and list the corrections to improve my English, the test is as follows:`
+                return `Act as an English proofreader and review the following text. Please correct the spelling and grammar of the text below and provide the corrected version. The test is as follows.`
         }
     }
 
@@ -306,7 +306,7 @@ async function doAction(popclip: PopClip, input: Input, options: Options, action
         )
         const result = actionImpl.processResponse(popclip, resp)
         
-        let toBePasted = `\n${result}\n`
+        let toBePasted = `${result}`
         // popclip.pasteText(toBePasted, { restore: true })
         popclip.copyText(toBePasted)
         popclip.showText(toBePasted, { preview: false })
@@ -427,7 +427,7 @@ const chatGPTActionsOptions: Array<any> = [
         "identifier": "model",
         "label": "Model",
         "type": "string",
-        "default value": "gpt-3.5-turbo"
+        "default value": "gpt-4-turbo"
     },
     {
         "identifier": "apiVersion",
