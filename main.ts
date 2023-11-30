@@ -216,13 +216,13 @@ class OneTimeAction extends ChatGPTAction {
     private getPrompt(action: AllowedOneTimeActions, language: string): string {
         switch (action) {
             case "writing":
-                return `Act as a English proofreader and review the following text. Feel free to rephrase sentences or make changes to make it straightforward, consise, technical tone suitable for an official English document. Please ensure that the final text is clear and consise with markdown format. The original text is as follows:`
+                return `Act as a English proofreader and review the following text. Feel free to rephrase sentences or make changes to make it straightforward, consise, technical tone suitable for an official English document. Please maintain the original formatting if the original text is in Markdown. Please provide the revised text directly and ensure clarity and conciseness. The original text is as follows:`
             case "dialogue":
-                return `You are an expert working in Google. Your task is to rephrase the following text into a clear and concise English expression that your colleagues can understand in daily conversation, while making it sound more nature and concise. The original text is as follows:`
+                return `You are an expert working in Google. Please rephrase the following text into a clear and concise English expression that your colleagues can understand in daily conversation, while making it sound more nature and concise. Please provide the revised text directly. The original text is as follows:`
             case "translate":
-                return `Act as a English proofreader and review the following text. Feel free to rephrase sentences or make changes to enhance clarity but maintain the overall tone and style of the original. The original text is as follows:`
+                return `Act as a English proofreader and review the following text. Feel free to rephrase sentences or make changes to enhance clarity but maintain the overall tone and style of the original. Please provide the revised text directly. The original text is as follows:`
             case "spell":
-                return `Act as an English proofreader and review the following text. Please correct the spelling and grammar of the text below and provide the corrected version. The test is as follows.`
+                return `Act as an English proofreader and review the following text. Please correct the spelling and grammar of the text below and provide the corrected version. Please provide the revised text directly. The test is as follows.`
         }
     }
 
@@ -427,7 +427,7 @@ const chatGPTActionsOptions: Array<any> = [
         "identifier": "model",
         "label": "Model",
         "type": "string",
-        "default value": "gpt-4-turbo"
+        "default value": "gpt4+"
     },
     {
         "identifier": "apiVersion",
