@@ -91,7 +91,7 @@ class OneTimeAction extends ChatGPTAction {
     getPrompt(action, language) {
         switch (action) {
             case "custom":
-                return `write docstring for me:`;
+                return `fill the docstring in google style: \n`;
             case "writing":
                 return `Act as a English proofreader. Feel free to rephrase sentences or make changes to make it straightforward, consise, technical tone suitable for an official English document. Please maintain the original formatting if the original text is in Markdown. Please provide the revised text directly and ensure clarity and conciseness. The original text is as follows:`;
             case "dialogue":
