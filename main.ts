@@ -99,7 +99,7 @@ interface APIResponse {
     }
 }
 
-type AllowedOneTimeActions = "writing" | "dialogue" | "translate" | "spell"
+type AllowedOneTimeActions = "custom" | "writing" | "dialogue" | "translate" | "spell"
 type AllowedActions = "chat" | AllowedOneTimeActions
 
 abstract class ChatGPTAction {
@@ -215,14 +215,16 @@ class ChatAction extends ChatGPTAction {
 class OneTimeAction extends ChatGPTAction {
     private getPrompt(action: AllowedOneTimeActions, language: string): string {
         switch (action) {
+            case "custom":
+                return `write docstring for me:`
             case "writing":
-                return `Act as a English proofreader and review the following text. Feel free to rephrase sentences or make changes to make it straightforward, consise, technical tone suitable for an official English document. Please maintain the original formatting if the original text is in Markdown. Please provide the revised text directly and ensure clarity and conciseness. The original text is as follows:`
+                return `Act as a English proofreader. Feel free to rephrase sentences or make changes to make it straightforward, consise, technical tone suitable for an official English document. Please maintain the original formatting if the original text is in Markdown. Please provide the revised text directly and ensure clarity and conciseness. The original text is as follows:`
             case "dialogue":
-                return `You are an expert working in Google. Please rephrase the following text into a clear and concise English expression that your colleagues can understand in daily conversation, while making it sound more nature and concise. Please provide the revised text directly. The original text is as follows:`
+                return `You are an expert working in Google. Please rephrase the following text into a clear and concise English expression that your colleagues can understand in daily conversation, while making it sound nature and concise. Please provide the revised text directly. The original text is as follows:`
             case "translate":
                 return `Act as a English proofreader and review the following text. Feel free to rephrase sentences or make changes to enhance clarity but maintain the overall tone and style of the original. Please provide the revised text directly. The original text is as follows:`
             case "spell":
-                return `Act as an English proofreader and review the following text. Please correct the spelling and grammar of the text below and provide the corrected version. Please provide the revised text directly. The test is as follows.`
+                return `Act as an English proofreader and review the following text. Please correct the spelling and grammar of the text below and provide the corrected version. Please provide the revised text only. The original text is as follows:`
         }
     }
 
@@ -240,7 +242,7 @@ class OneTimeAction extends ChatGPTAction {
         return {
             model: options.model,
             messages: [
-                { role: "system", content: "You are a professional multilingual assistant who will help me writing, dialogue, or translate texts. Please strictly follow user instructions." },
+                // { role: "system", content: "You are a professional multilingual assistant who will help me writing, dialogue, or translate texts. Please strictly follow user instructions." },
                 {
                     role: "user", content: `${prompt} ${input.text}`,
                 },
@@ -257,6 +259,11 @@ function makeClientOptions(options: Options): object {
             "baseURL": options.apiBase,
             headers: { Authorization: `Bearer ${options.apiKey}` },
             timeout: timeoutMs,
+            proxy: {
+                host: '127.0.0.1',
+                port: 7890,
+                protocol: 'http'
+              }
         }
     } else if (options.apiType === "azure") {
         // Ref: https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#chat-completions
@@ -335,6 +342,7 @@ async function doAction(popclip: PopClip, input: Input, options: Options, action
 }
 
 chatGPTActions.set("chat", new ChatAction())
+chatGPTActions.set("custom", new OneTimeAction())
 chatGPTActions.set("writing", new OneTimeAction())
 chatGPTActions.set("dialogue", new OneTimeAction())
 chatGPTActions.set("translate", new OneTimeAction())
@@ -346,6 +354,12 @@ export const actions = [
         // icon: "symbol:arrow.up.message.fill", // icon: "iconify:uil:edit",
         requirements: ["text"],
         code: async (input: Input, options: Options, context: Context) => doAction(popclip, input, options, "chat"),
+    },
+    {
+        title: "custom",
+        icon: "symbol:c.square.fill", // icon: "iconify:uil:edit",
+        requirements: ["text", "option-writingEnabled=1"],
+        code: async (input: Input, options: Options, context: Context) => doAction(popclip, input, options, "custom"),
     },
     {
         title: "ChatGPTx: writing",
@@ -415,19 +429,19 @@ const chatGPTActionsOptions: Array<any> = [
         "label": "API Base URL",
         "description": "For Azure: https://{resource-name}.openai.azure.com/openai/deployments/{deployment-id}",
         "type": "string",
-        "default value": "https://oa.api2d.site/v1"
+        "default value": "https://oa.api2d.net/v1"
     },
     {
         "identifier": "apiKey",
         "label": "API Key",
         "type": "string",
-        "default value": "fk217875-ktuKeXTGr3koZ6XxZVKz3src0OrsWGXN"
+        "default value": ""
     },
     {
         "identifier": "model",
         "label": "Model",
         "type": "string",
-        "default value": "gpt4+"
+        "default value": "gpt-3.5-turbo"
     },
     {
         "identifier": "apiVersion",
@@ -451,6 +465,7 @@ const chatGPTActionsOptions: Array<any> = [
 ]
 
 new Array(
+    { name: "custom", primary: "English", secondary: "Chinese Simplified" },
     { name: "writing", primary: "English", secondary: "Chinese Simplified" },
     { name: "dialogue", primary: "English", secondary: "Chinese Simplified" },
     { name: "translate", primary: "Chinese Simplified", secondary: "English" },

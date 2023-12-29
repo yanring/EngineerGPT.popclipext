@@ -90,14 +90,16 @@ class ChatAction extends ChatGPTAction {
 class OneTimeAction extends ChatGPTAction {
     getPrompt(action, language) {
         switch (action) {
+            case "custom":
+                return `write docstring for me:`;
             case "writing":
-                return `You are an IT professional tasked with converting the following text into straightforward, consise, technical tone suitable for an official English document. Please ensure that the final text is clear and consise, while maintaining all the original technical information. The original conversation is as follows:`;
+                return `Act as a English proofreader. Feel free to rephrase sentences or make changes to make it straightforward, consise, technical tone suitable for an official English document. Please maintain the original formatting if the original text is in Markdown. Please provide the revised text directly and ensure clarity and conciseness. The original text is as follows:`;
             case "dialogue":
-                return `You are an American expert working in Google. Your task is to rephrase the following text into a clear and concise English expression that your colleagues can understand in daily conversation. Remember, your goal is to retain all the technical information from the original text, while making it sound more nature and concise. The original text is as follows:`;
+                return `You are an expert working in Google. Please rephrase the following text into a clear and concise English expression that your colleagues can understand in daily conversation, while making it sound nature and concise. Please provide the revised text directly. The original text is as follows:`;
             case "translate":
-                return `Act as a English proofreader and review the following text. Feel free to rephrase sentences or make changes to enhance clarity but maintain the overall tone and style of the original. The original text is as follows:`;
+                return `Act as a English proofreader and review the following text. Feel free to rephrase sentences or make changes to enhance clarity but maintain the overall tone and style of the original. Please provide the revised text directly. The original text is as follows:`;
             case "spell":
-                return `Please correct the spelling and grammar of the following text, and list the corrections to improve my English, the test is as follows:`;
+                return `Act as an English proofreader and review the following text. Please correct the spelling and grammar of the text below and provide the corrected version. Please provide the revised text only. The original text is as follows:`;
         }
     }
     beforeRequest(popclip, input, options, action) {
@@ -112,7 +114,7 @@ class OneTimeAction extends ChatGPTAction {
         return {
             model: options.model,
             messages: [
-                { role: "system", content: "You are a professional multilingual assistant who will help me writing, dialogue, or translate texts. Please strictly follow user instructions." },
+                // { role: "system", content: "You are a professional multilingual assistant who will help me writing, dialogue, or translate texts. Please strictly follow user instructions." },
                 {
                     role: "user", content: `${prompt} ${input.text}`,
                 },
@@ -128,6 +130,11 @@ function makeClientOptions(options) {
             "baseURL": options.apiBase,
             headers: { Authorization: `Bearer ${options.apiKey}` },
             timeout: timeoutMs,
+            proxy: {
+                host: '127.0.0.1',
+                port: 7890,
+                protocol: 'http'
+            }
         };
     }
     else if (options.apiType === "azure") {
@@ -168,7 +175,7 @@ async function doAction(popclip, input, options, action) {
     try {
         const resp = await openai.post("chat/completions", requestData);
         const result = actionImpl.processResponse(popclip, resp);
-        let toBePasted = `\n${result}\n`;
+        let toBePasted = `${result}`;
         // popclip.pasteText(toBePasted, { restore: true })
         popclip.copyText(toBePasted);
         popclip.showText(toBePasted, { preview: false });
@@ -195,6 +202,7 @@ async function doAction(popclip, input, options, action) {
     }
 }
 chatGPTActions.set("chat", new ChatAction());
+chatGPTActions.set("custom", new OneTimeAction());
 chatGPTActions.set("writing", new OneTimeAction());
 chatGPTActions.set("dialogue", new OneTimeAction());
 chatGPTActions.set("translate", new OneTimeAction());
@@ -205,6 +213,12 @@ exports.actions = [
         // icon: "symbol:arrow.up.message.fill", // icon: "iconify:uil:edit",
         requirements: ["text"],
         code: async (input, options, context) => doAction(popclip, input, options, "chat"),
+    },
+    {
+        title: "custom",
+        icon: "symbol:c.square.fill",
+        requirements: ["text", "option-writingEnabled=1"],
+        code: async (input, options, context) => doAction(popclip, input, options, "custom"),
     },
     {
         title: "ChatGPTx: writing",
@@ -272,13 +286,13 @@ const chatGPTActionsOptions = [
         "label": "API Base URL",
         "description": "For Azure: https://{resource-name}.openai.azure.com/openai/deployments/{deployment-id}",
         "type": "string",
-        "default value": "https://oa.api2d.site/v1"
+        "default value": "https://oa.api2d.net/v1"
     },
     {
         "identifier": "apiKey",
         "label": "API Key",
         "type": "string",
-        "default value": "fk217875-ktuKeXTGr3koZ6XxZVKz3src0OrsWGXN"
+        "default value": ""
     },
     {
         "identifier": "model",
@@ -306,7 +320,7 @@ const chatGPTActionsOptions = [
         "description": "Click while holding shift(⇧) to use the secondary language.",
     }
 ];
-new Array({ name: "writing", primary: "English", secondary: "Chinese Simplified" }, { name: "dialogue", primary: "English", secondary: "Chinese Simplified" }, { name: "translate", primary: "Chinese Simplified", secondary: "English" }, { name: "spell", primary: "Chinese Simplified", secondary: "English" }).forEach((value) => {
+new Array({ name: "custom", primary: "English", secondary: "Chinese Simplified" }, { name: "writing", primary: "English", secondary: "Chinese Simplified" }, { name: "dialogue", primary: "English", secondary: "Chinese Simplified" }, { name: "translate", primary: "Chinese Simplified", secondary: "English" }, { name: "spell", primary: "Chinese Simplified", secondary: "English" }).forEach((value) => {
     const capitalizedName = value.name.charAt(0).toUpperCase() + value.name.slice(1);
     chatGPTActionsOptions.push({
         "identifier": value.name,
