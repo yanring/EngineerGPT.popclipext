@@ -50,6 +50,7 @@ interface Options {
     apiVersion: string
     model: string
     temperature: string
+    CustomPrompt: string
 
     writingEnabled: boolean
     writingPrimaryLanguage: string
@@ -213,16 +214,16 @@ class ChatAction extends ChatGPTAction {
 }
 
 class OneTimeAction extends ChatGPTAction {
-    private getPrompt(action: AllowedOneTimeActions, language: string): string {
+    private getPrompt(action: AllowedOneTimeActions, options: Options): string {
         switch (action) {
             case "custom":
-                return `fill the docstring in google style: \n`
+                return options["CustomPrompt"]
             case "writing":
-                return `Act as a English proofreader. Feel free to rephrase sentences or make changes to make it straightforward, consise, technical tone suitable for an official English document. Please maintain the original formatting if the original text is in Markdown. Please provide the revised text directly and ensure clarity and conciseness. The original text is as follows:`
+                return `Act as a English proofreader. Feel free to rephrase sentences or make changes to make it consise and technical which suitable for documentation. Please provide the revised text directly. The original text is as follows:`
             case "dialogue":
-                return `You are an expert working in Google. Please rephrase the following text into a clear and concise English expression that your colleagues can understand in daily conversation, while making it sound nature and concise. Please provide the revised text directly. The original text is as follows:`
+                return `You are Google engineer. Please rephrase the following text into a clear and concise English expression that your colleagues can understand in online conversation, while making it sound nature and concise. Please provide the revised text directly. The original text is as follows:`
             case "translate":
-                return `Act as a English proofreader and review the following text. Feel free to rephrase sentences or make changes to enhance clarity but maintain the overall tone and style of the original. Please provide the revised text directly. The original text is as follows:`
+                return `Act as a English translator. Feel free to rephrase sentences or make changes to enhance clarity and concise but maintain the overall tone and style of the original. Please provide the revised text directly. The original text is as follows:`
             case "spell":
                 return `Act as an English proofreader and review the following text. Please correct the spelling and grammar of the text below and provide the corrected version. Please provide the revised text only. The original text is as follows:`
         }
@@ -238,11 +239,11 @@ class OneTimeAction extends ChatGPTAction {
         }
 
         const language = popclip.modifiers.shift ? options[`${action}SecondaryLanguage`] : options[`${action}PrimaryLanguage`]
-        const prompt = this.getPrompt(action as AllowedOneTimeActions, language)
+        const prompt = this.getPrompt(action as AllowedOneTimeActions, options)
         return {
             model: options.model,
             messages: [
-                // { role: "system", content: "You are a professional multilingual assistant who will help me writing, dialogue, or translate texts. Please strictly follow user instructions." },
+                { role: "system", content: "Be precise and concise." },
                 {
                     role: "user", content: `${prompt} ${input.text}`,
                 },
@@ -262,7 +263,7 @@ function makeClientOptions(options: Options): object {
             proxy: {
                 host: '127.0.0.1',
                 port: 7890,
-                protocol: 'http'
+                protocol: 'https'
               }
         }
     } else if (options.apiType === "azure") {
@@ -429,13 +430,13 @@ const chatGPTActionsOptions: Array<any> = [
         "label": "API Base URL",
         "description": "For Azure: https://{resource-name}.openai.azure.com/openai/deployments/{deployment-id}",
         "type": "string",
-        "default value": "https://oa.api2d.net/v1"
+        "default value": "https://oa.api2d.site/v1"
     },
     {
         "identifier": "apiKey",
         "label": "API Key",
         "type": "string",
-        "default value": ""
+        "default value": "fk217875-ktuKeXTGr3koZ6XxZVKz3src0OrsWGXN"
     },
     {
         "identifier": "model",
@@ -457,11 +458,11 @@ const chatGPTActionsOptions: Array<any> = [
         "default value": "1"
     },
     {
-        "identifier": "opinionedActions",
-        "label": "❤ OPINIONED ACTIONS",
-        "type": "heading",
-        "description": "Click while holding shift(⇧) to use the secondary language.",
-    }
+        "identifier": "CustomPrompt",
+        "label": "CustomPrompt",
+        "type": "string",
+        "default value": "翻译为中文："
+    },
 ]
 
 new Array(
