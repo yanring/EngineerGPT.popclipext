@@ -219,13 +219,13 @@ class OneTimeAction extends ChatGPTAction {
             case "custom":
                 return options["CustomPrompt"]
             case "writing":
-                return `Act as a English proofreader. Feel free to rephrase sentences or make changes to make it consise and technical which suitable for documentation. Please provide the revised text directly. The original text is as follows:`
+                return `You are a experienced writing coach. Make my writing better, clearer and concise for slides and document. Please provide the revised text directly. Here is my text:`
             case "dialogue":
-                return `You are Google engineer. Please rephrase the following text into a clear and concise English expression that your colleagues can understand in online conversation, while making it sound nature and concise. Please provide the revised text directly. The original text is as follows:`
+                return `You are a experienced writing coach. Make my writing better for a casual audience. Please provide the revised text directly. Here is my text:`
             case "translate":
-                return `Act as a English translator. Feel free to rephrase sentences or make changes to enhance clarity and concise but maintain the overall tone and style of the original. Please provide the revised text directly. The original text is as follows:`
+                return `You are a experienced writing coach and English translator. Translate my writing to English and make it better for document. Please provide the revised text directly. Here is my text:`
             case "spell":
-                return `Act as an English proofreader and review the following text. Please correct the spelling and grammar of the text below and provide the corrected version. Please provide the revised text only. The original text is as follows:`
+                return `You are a experienced writing coach. Make my writing better while correct the spell or grammar error. Please provide the revised text only. Here is my text:`
         }
     }
 
@@ -308,37 +308,30 @@ async function doAction(popclip: PopClip, input: Input, options: Options, action
     const requestData = actionImpl.makeRequestData(popclip, input, options, action)!
 
     const openai = axios.create(makeClientOptions(options))
-    try {
-        const resp: APIResponse = await openai.post(
-            "chat/completions", requestData
-        )
-        const result = actionImpl.processResponse(popclip, resp)
-        
-        let toBePasted = `${result}`
-        // popclip.pasteText(toBePasted, { restore: true })
-        popclip.copyText(toBePasted)
-        popclip.showText(toBePasted, { preview: false })
-        // popclip.showSuccess()
-
-        // if (popclip.context.canPaste) {
-        //     let toBePasted = `\n\n${result}\n`
-        //     if (!isTerminalApplication(popclip.context.appName) && popclip.context.canCopy) {
-        //         // Prevent the original selected text from being replaced.
-        //         toBePasted = `${input.text}\n\n${result}\n`
-        //     }
-        //     popclip.pasteText(toBePasted, { restore: true })
-        //     popclip.copyText(toBePasted)
-        //     popclip.showText(toBePasted, { preview: true })
-        //     popclip.showSuccess()
-        // } else {
-        //     popclip.copyText(result)
-        //     popclip.showText(result, { preview: true })
-        // }
-    } catch (e) {
-        actionImpl.onRequestError(popclip, e)
-
-        // popclip.showFailure()
-        popclip.showText(String(e))
+    
+    let attempt = 0;
+    const maxAttempts = 5;
+    while (attempt < maxAttempts) {
+        try {
+            const resp: APIResponse = await openai.post(
+                "chat/completions", requestData
+            )
+            const result = actionImpl.processResponse(popclip, resp)
+            
+            let toBePasted = `${result}`
+            // popclip.pasteText(toBePasted, { restore: true })
+            popclip.copyText(toBePasted)
+            popclip.showText(toBePasted, { preview: false })
+            return
+        } catch (e) {
+            attempt++;
+            if (attempt >= maxAttempts) {
+                actionImpl.onRequestError(popclip, e)
+                // popclip.showFailure()
+                popclip.showText(String(e))
+                break;
+            }
+        }
     }
 }
 
