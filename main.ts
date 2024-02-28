@@ -429,13 +429,13 @@ const chatGPTActionsOptions: Array<any> = [
         "identifier": "apiKey",
         "label": "API Key",
         "type": "string",
-        "default value": "fk217875-ktuKeXTGr3koZ6XxZVKz3src0OrsWGXN"
+        "default value": ""
     },
     {
         "identifier": "model",
         "label": "Model",
         "type": "string",
-        "default value": "gpt-3.5-turbo"
+        "default value": "gpt-4-0125-preview"
     },
     {
         "identifier": "apiVersion",
@@ -476,24 +476,6 @@ new Array(
             "identifier": `${value.name}Enabled`,
             "label": "Enable",
             "type": "boolean",
-            "inset": true
-        },
-        {
-            "identifier": `${value.name}PrimaryLanguage`,
-            "label": "Primary",
-            "type": "multiple",
-            "default value": `${value.primary}`,
-            "values": optionLanguagesValues,
-            "value labels": optionLanguagesValueLabels,
-            "inset": true
-        },
-        {
-            "identifier": `${value.name}SecondaryLanguage`,
-            "label": "Secondary",
-            "type": "multiple",
-            "default value": `${value.secondary}`,
-            "values": optionLanguagesValues,
-            "value labels": optionLanguagesValueLabels,
             "inset": true
         })
 })
